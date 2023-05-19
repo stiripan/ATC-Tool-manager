@@ -1,0 +1,60 @@
+
+    Dim filePath As String
+    filePath = "C:\Users\Blue Mill\Desktop\fusion NC\1.nc" 'Change this to the path of your NC file"
+    
+    Dim fileNum As Integer
+    fileNum = FreeFile
+    
+    Open filePath For Input As #fileNum
+    
+    Dim line As String
+    Dim toolNumber As String
+    Dim toolDesc As String
+    Dim toolInfo As String
+    Dim currentRow As Long
+    Dim targetRow As Long
+    
+    currentRow = 1 'Start writing at row 1
+    
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, line
+        
+        If InStr(line, "(T") > 0 Then 'Look for the tool number
+            toolNumber = Mid(line, InStr(line, "(T") + 2, 2) 'Assuming tool number is 2 digits long
+            
+            'Verify that tool number has 2 digits
+            If Len(toolNumber) <> 2 Then
+                MsgBox "Invalid tool number: " & toolNumber, vbExclamation, "Error"
+                Exit Sub
+            End If
+            
+            'Extract the tool description in parentheses
+            toolDesc = ""
+            If InStr(line, "(") > 0 And InStr(line, ")") > 0 Then
+                toolDesc = Trim(Mid(line, InStr(line, "(") + 1, InStr(line, ")") - InStr(line, "(") - 1))
+            End If
+            
+            'Extract the remaining part of the line after the tool number
+            toolInfo = Replace(line, "(T" & toolNumber & " ", "")
+            toolInfo = Replace(toolInfo, "(" & toolDesc & ")", "")
+            toolInfo = Trim(toolInfo)
+            
+            'Find the target row to write to
+            targetRow = -1
+            If IsNumeric(toolNumber) Then
+                If CLng(toolNumber) >= 1 And CLng(toolNumber) <= 20 Then
+                    targetRow = CLng(toolNumber)
+                End If
+            End If
+            
+            If targetRow > 0 Then 'Tool number is valid, write to target row
+                Sheet1.Cells(targetRow, 1).Value = "T" & toolNumber & " " & toolDesc & " " & toolInfo
+            Else 'Tool number is invalid, skip
+                MsgBox "Invalid tool number: " & toolNumber, vbExclamation, "Error"
+            End If
+        End If
+    Loop
+    
+    Close #fileNum
+End Sub
+
